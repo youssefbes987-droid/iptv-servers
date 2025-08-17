@@ -4,7 +4,14 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: async ({ queryKey }) => {
-        const response = await fetch(queryKey[0] as string);
+        const token = localStorage.getItem('vmax-auth-token');
+        const headers: Record<string, string> = {};
+        
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(queryKey[0] as string, { headers });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -15,11 +22,18 @@ export const queryClient = new QueryClient({
 });
 
 export const apiRequest = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('vmax-auth-token');
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
     ...options,
   });
 

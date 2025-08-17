@@ -45,11 +45,9 @@ export default function LandingPage() {
             </div>
             <span className="text-2xl font-bold text-white">Vmax IPTV</span>
           </div>
-          <Link href="/login">
-            <a className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-2 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center space-x-2">
-              <span>Login</span>
-              <ChevronRight className="w-4 h-4" />
-            </a>
+          <Link href="/login" className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-6 py-2 rounded-lg hover:bg-white/20 transition-all duration-300 flex items-center space-x-2">
+            <span>Login</span>
+            <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
       </nav>
@@ -72,10 +70,8 @@ export default function LandingPage() {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link href="/login">
-                <a className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl">
-                  Get Started
-                </a>
+              <Link href="/login" className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl">
+                Get Started
               </Link>
               <button className="border-2 border-white/30 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
                 Learn More

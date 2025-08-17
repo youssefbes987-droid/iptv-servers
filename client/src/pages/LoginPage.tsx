@@ -63,11 +63,9 @@ export default function LoginPage() {
         {/* Left Side - Login Form */}
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
           <div className="mb-8">
-            <Link href="/">
-              <a className="flex items-center text-blue-200 hover:text-white transition-colors mb-6">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Homepage
-              </a>
+            <Link href="/" className="flex items-center text-blue-200 hover:text-white transition-colors mb-6">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Homepage
             </Link>
             
             <div className="flex items-center space-x-3 mb-6">

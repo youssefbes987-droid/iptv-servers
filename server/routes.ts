@@ -40,7 +40,7 @@ const requireManager = (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
-  app.post('/api/auth/login', async (req, res) => {
+  app.post('/api/login', async (req, res) => {
     try {
       const { username, password } = loginSchema.parse(req.body);
       
@@ -49,9 +49,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      // Remove password from response
+      // Return user data with auth token (for simplicity, use user ID)
       const { password: _, ...userResponse } = user;
-      res.json({ user: userResponse });
+      res.json({ 
+        user: userResponse,
+        token: user.id.toString()
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid request data' });
@@ -60,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/auth/register', authenticateUser, requireManager, async (req, res) => {
+  app.post('/api/register', authenticateUser, requireManager, async (req, res) => {
     try {
       const userData = registerSchema.parse(req.body);
       

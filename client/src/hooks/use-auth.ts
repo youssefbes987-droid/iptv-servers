@@ -1,6 +1,6 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { User, LoginRequest } from '@shared/schema';
+import React, { createContext, ReactNode, useContext, useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { User, LoginRequest } from '@shared/schema';
 import { apiRequest } from '../lib/queryClient';
 import { useToast } from './use-toast';
 
@@ -9,7 +9,6 @@ interface AuthContextType {
   login: (credentials: LoginRequest) => void;
   logout: () => void;
   isLoading: boolean;
-  loginMutation: ReturnType<typeof useMutation>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
@@ -34,29 +33,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = localStorage.getItem('vmax-user');
     
     if (storedToken && storedUser) {
-      setAuthToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        setAuthToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse stored user data:', error);
+        localStorage.removeItem('vmax-auth-token');
+        localStorage.removeItem('vmax-user');
+      }
     }
   }, []);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginRequest) => {
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      });
-      return response;
+      return apiRequest('POST', '/api/login', credentials);
     },
     onSuccess: (data) => {
-      const { user } = data;
-      setUser(user);
-      setAuthToken(user.id.toString());
-      localStorage.setItem('vmax-auth-token', user.id.toString());
-      localStorage.setItem('vmax-user', JSON.stringify(user));
+      setUser(data.user);
+      setAuthToken(data.token);
+      localStorage.setItem('vmax-auth-token', data.token);
+      localStorage.setItem('vmax-user', JSON.stringify(data.user));
       
       toast({
         title: 'Login successful',
-        description: `Welcome back, ${user.name}!`,
+        description: `Welcome back, ${data.user.name}!`,
       });
     },
     onError: (error: any) => {
@@ -85,15 +85,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      logout,
-      isLoading: loginMutation.isPending,
-      loginMutation,
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextType = {
+    user,
+    login,
+    logout,
+    isLoading: loginMutation.isPending,
+  };
+
+  return React.createElement(AuthContext.Provider, { value }, children);
 }

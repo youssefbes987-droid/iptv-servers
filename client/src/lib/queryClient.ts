@@ -1,46 +1,52 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from '@tanstack/react-query';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: async ({ queryKey }) => {
-        const token = localStorage.getItem('vmax-auth-token');
-        const headers: Record<string, string> = {};
-        
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-        
-        const response = await fetch(queryKey[0] as string, { headers });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      },
+      refetchOnWindowFocus: false,
+      retry: false,
     },
   },
 });
 
-export const apiRequest = async (url: string, options: RequestInit = {}) => {
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: any
+): Promise<any> {
   const token = localStorage.getItem('vmax-auth-token');
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
   
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
+  const config: RequestInit = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  };
+
+  if (data) {
+    config.body = JSON.stringify(data);
   }
 
-  const response = await fetch(url, {
-    headers,
-    ...options,
-  });
+  const response = await fetch(url, config);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+    throw new Error(errorData.message || 'Request failed');
   }
 
   return response.json();
+}
+
+export const getQueryFn = ({ on401 }: { on401: string }) => {
+  return async ({ queryKey }: { queryKey: any[] }) => {
+    try {
+      return await apiRequest('GET', queryKey[0]);
+    } catch (error: any) {
+      if (error.message.includes('401') && on401 === 'returnNull') {
+        return null;
+      }
+      throw error;
+    }
+  };
 };

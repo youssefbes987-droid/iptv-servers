@@ -1,49 +1,58 @@
-import { Router, Route, Switch, Link, useLocation } from "wouter";
-import { useState, createContext, useContext } from "react";
-import LandingPage from './pages/LandingPage';
+import { Router, Route, Switch, Redirect } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider, useAuth } from './hooks/use-auth';
+import { Toaster } from "./components/ui/toaster";
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 
-// Simple auth context for the migrated app
-interface User {
-  id: number;
-  username: string;
-  role: "manager" | "salesman" | "customer-service";
-  name: string;
-  email: string;
-  monthlyTarget: number;
-  achieved: number;
-}
 
-interface AuthContextType {
-  user: User | null;
-  setUser: (user: User | null) => void;
-}
+const queryClient = new QueryClient();
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Redirect to="/login" />;
   }
-  return context;
+  
+  return <>{children}</>;
+}
+
+function AppRouter() {
+  const { user } = useAuth();
+
+  return (
+    <Router>
+      <Switch>
+        <Route path="/">
+          {user ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
+        </Route>
+        
+        <Route path="/login">
+          {user ? <Redirect to="/dashboard" /> : <LoginPage />}
+        </Route>
+        
+        <Route path="/dashboard">
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        </Route>
+
+        
+        <Route component={() => <div className="flex items-center justify-center min-h-screen text-lg">404 - Page not found</div>} />
+      </Switch>
+    </Router>
+  );
 }
 
 function App() {
-  const [user, setUser] = useState<User | null>(null);
-
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
-      <Router>
-        <Switch>
-          <Route path="/" component={LandingPage} />
-          <Route path="/login" component={LoginPage} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route component={() => <div>404 - Page not found</div>} />
-        </Switch>
-      </Router>
-    </AuthContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppRouter />
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

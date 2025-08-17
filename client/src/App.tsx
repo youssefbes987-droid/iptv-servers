@@ -1,51 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
-import Dashboard from './components/Dashboard';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { Router, Route, Switch, Link, useLocation } from "wouter";
+import { useState, createContext, useContext } from "react";
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import Dashboard from './pages/Dashboard';
 
-function AppContent() {
-  const { user, loading } = useAuth();
-  const [currentPage, setCurrentPage] = useState('landing');
+// Simple auth context for the migrated app
+interface User {
+  id: number;
+  username: string;
+  role: "manager" | "salesman" | "customer-service";
+  name: string;
+  email: string;
+  monthlyTarget: number;
+  achieved: number;
+}
 
-  useEffect(() => {
-    if (user) {
-      setCurrentPage('dashboard');
-    } else if (currentPage === 'dashboard') {
-      setCurrentPage('landing');
-    }
-  }, [user]);
+interface AuthContextType {
+  user: User | null;
+  setUser: (user: User | null) => void;
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
-      </div>
-    );
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
   }
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'login':
-        return <LoginPage onBack={() => setCurrentPage('landing')} />;
-      case 'dashboard':
-        return user ? <Dashboard /> : <LandingPage onLogin={() => setCurrentPage('login')} />;
-      default:
-        return <LandingPage onLogin={() => setCurrentPage('login')} />;
-    }
-  };
-
-  return <div className="min-h-screen bg-gray-50">{renderPage()}</div>;
+  return context;
 }
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <AppContent />
-      </NotificationProvider>
-    </AuthProvider>
+    <AuthContext.Provider value={{ user, setUser }}>
+      <Router>
+        <Switch>
+          <Route path="/" component={LandingPage} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route component={() => <div>404 - Page not found</div>} />
+        </Switch>
+      </Router>
+    </AuthContext.Provider>
   );
 }
 
